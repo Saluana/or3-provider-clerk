@@ -1,0 +1,33 @@
+{
+    "name": "or3-provider-clerk",
+    "version": "0.0.1",
+    "type": "module",
+    "exports": {
+        "./nuxt": "./src/module.ts",
+        "./src/*": "./src/*"
+    },
+    "typesVersions": {
+        "*": {
+            "src/*": ["src/*"]
+        }
+    },
+    "main": "./src/module.ts",
+    "files": [
+        "src"
+    ],
+    "scripts": {
+        "type-check": "tsc --noEmit",
+        "test": "echo 'No tests yet'"
+    },
+    "dependencies": {
+        "@clerk/nuxt": "^1.13.12"
+    },
+    "peerDependencies": {
+        "nuxt": "^3.0.0 || ^4.0.0",
+        "@nuxt/kit": "^3.0.0"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.3",
+        "pathe": "^2.0.0"
+    }
+}
