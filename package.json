@@ -1,15 +1,34 @@
 {
     "name": "or3-provider-clerk",
     "version": "0.0.1",
+    "description": "Clerk authentication provider for OR3 Chat — SSR-safe auth middleware, token brokering, and session management.",
+    "license": "MIT",
     "type": "module",
     "exports": {
-        "./nuxt": "./src/module.ts"
+        ".": {
+            "types": "./dist/types.d.mts",
+            "import": "./dist/module.mjs"
+        },
+        "./nuxt": {
+            "types": "./dist/types.d.mts",
+            "import": "./dist/module.mjs"
+        }
     },
-    "main": "./src/module.ts",
+    "main": "./dist/module.mjs",
+    "types": "./dist/types.d.mts",
+    "typesVersions": {
+        "*": {
+            ".": [
+                "./dist/types.d.mts"
+            ]
+        }
+    },
     "files": [
-        "src"
+        "dist"
     ],
     "scripts": {
+        "prepack": "nuxt-module-build build",
+        "build": "nuxt-module-build build",
         "type-check": "tsc --noEmit",
         "test": "vitest run"
     },
@@ -17,10 +36,11 @@
         "@clerk/nuxt": "^1.13.12"
     },
     "peerDependencies": {
-        "nuxt": "^3.0.0 || ^4.0.0",
-        "@nuxt/kit": "^3.0.0"
+        "@nuxt/kit": "^3.0.0",
+        "nuxt": "^3.0.0 || ^4.0.0"
     },
     "devDependencies": {
+        "@nuxt/module-builder": "^1.0.2",
         "@types/node": "^25.2.1",
         "h3": "^1.15.4",
         "jsdom": "^28.0.0",
