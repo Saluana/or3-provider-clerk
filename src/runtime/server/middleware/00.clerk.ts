@@ -7,7 +7,7 @@
  * SSR endpoints and middleware can resolve sessions and perform authorization.
  *
  * Behavior:
- * - No-ops unless `runtimeConfig.auth.enabled === true`
+ * - No-ops unless `runtimeConfig.auth.enabled === true` and provider is `clerk`
  * - Dynamically imports `@clerk/nuxt/server` to avoid pulling Clerk into builds
  *   when SSR auth is disabled
  * - Runs before other middleware (file name prefix `00.`) so `event.context.auth`
@@ -23,11 +23,15 @@
  */
 
 import { useRuntimeConfig } from '#imports';
+import { CLERK_PROVIDER_ID } from '~~/shared/cloud/provider-ids';
 
 export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig();
-    // Only run middleware when SSR auth is enabled
-    if (config.auth.enabled !== true) {
+    // Only run middleware when SSR auth is enabled and Clerk is active.
+    if (
+        config.auth.enabled !== true ||
+        config.auth.provider !== CLERK_PROVIDER_ID
+    ) {
         return;
     }
 
