@@ -4,6 +4,7 @@
     "description": "Clerk authentication provider for OR3 Chat — SSR-safe auth middleware, token brokering, and session management.",
     "license": "MIT",
     "type": "module",
+    "sideEffects": false,
     "exports": {
         ".": {
             "types": "./dist/types.d.mts",
@@ -27,10 +28,13 @@
         "dist"
     ],
     "scripts": {
-        "prepack": "nuxt-module-build build",
+        "prepack": "bun run build",
         "build": "nuxt-module-build build",
         "type-check": "tsc --noEmit",
         "test": "vitest run"
+    },
+    "publishConfig": {
+        "access": "public"
     },
     "dependencies": {
         "@clerk/nuxt": "^1.13.12"
