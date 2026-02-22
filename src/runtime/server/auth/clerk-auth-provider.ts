@@ -19,7 +19,7 @@
 import type { H3Event } from 'h3';
 import type { AuthProvider, ProviderSession } from '~~/server/auth/types';
 import { CLERK_PROVIDER_ID } from '~~/shared/cloud/provider-ids';
-import { clerkClient } from '@clerk/nuxt/server';
+import { clerkClient, clerkMiddleware } from '@clerk/nuxt/server';
 
 /**
  * Purpose:
@@ -50,12 +50,16 @@ export const clerkAuthProvider: AuthProvider = {
      * @returns Normalized provider session or `null` if unauthenticated.
      */
     async getSession(event: H3Event): Promise<ProviderSession | null> {
-        // Clerk middleware populates event.context.auth as a function
-        const authFn = event.context.auth as (() => unknown) | undefined;
+        // Clerk middleware populates event.context.auth as a function.
+        // In some middleware orderings, this may not have run yet. Bootstrap once.
+        let authFn = event.context.auth as (() => unknown) | undefined;
         if (typeof authFn !== 'function') {
-            if (import.meta.dev) {
-                throw new Error('Clerk auth context missing. Ensure Clerk middleware is configured.');
-            }
+            const middleware = clerkMiddleware();
+            await middleware(event);
+            authFn = event.context.auth as (() => unknown) | undefined;
+        }
+
+        if (typeof authFn !== 'function') {
             return null;
         }
 
