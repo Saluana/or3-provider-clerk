@@ -13,6 +13,9 @@ export default defineNuxtModule({
             handler: resolve('runtime/server/middleware/00.clerk'),
         });
         addServerPlugin(resolve('runtime/server/plugins/register'));
+        addPlugin(resolve('runtime/plugins/clerk-auth-ui.client'), {
+            append: true,
+        });
         addPlugin(resolve('runtime/plugins/auth-token-broker.client'), {
             append: true,
         });

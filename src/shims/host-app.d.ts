@@ -33,3 +33,23 @@ declare module '~/composables/auth/useSessionContext' {
         refresh: () => Promise<void>;
     };
 }
+
+declare module '#app' {
+    import type { Component } from 'vue';
+
+    interface NuxtApp {
+        $registerAuthUiAdapter?: (input: {
+            id: string;
+            component: Component;
+        }) => void;
+    }
+}
+
+declare module 'vue' {
+    interface ComponentCustomProperties {
+        $registerAuthUiAdapter?: (input: {
+            id: string;
+            component: unknown;
+        }) => void;
+    }
+}
