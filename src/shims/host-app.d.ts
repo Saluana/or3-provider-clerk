@@ -42,12 +42,20 @@ declare module '#app' {
             id: string;
             component: Component;
         }) => void;
+        $registerLockPageAdapter?: (input: {
+            id: string;
+            component: Component;
+        }) => void;
     }
 }
 
 declare module 'vue' {
     interface ComponentCustomProperties {
         $registerAuthUiAdapter?: (input: {
+            id: string;
+            component: unknown;
+        }) => void;
+        $registerLockPageAdapter?: (input: {
             id: string;
             component: unknown;
         }) => void;

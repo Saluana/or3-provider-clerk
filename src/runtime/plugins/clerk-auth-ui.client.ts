@@ -7,10 +7,12 @@ type AuthUiRegistryInput = {
 
 type AuthUiRegistryBridge = {
     $registerAuthUiAdapter?: (input: AuthUiRegistryInput) => void;
+    $registerLockPageAdapter?: (input: AuthUiRegistryInput) => void;
 };
 
 type AuthUiRegistryGlobalState = typeof globalThis & {
     __or3AuthUiAdapterQueue__?: AuthUiRegistryInput[];
+    __or3LockPageAdapterQueue__?: AuthUiRegistryInput[];
 };
 
 const CLERK_PROVIDER_ID = 'clerk';
@@ -47,6 +49,38 @@ function enqueueAuthUiAdapter(component: unknown): void {
     }
 }
 
+function tryRegisterLockPageAdapter(component: unknown): boolean {
+    const nuxtApp = useNuxtApp() as AuthUiRegistryBridge;
+    if (typeof nuxtApp.$registerLockPageAdapter !== 'function') {
+        return false;
+    }
+
+    nuxtApp.$registerLockPageAdapter({
+        id: CLERK_PROVIDER_ID,
+        component,
+    });
+    return true;
+}
+
+function enqueueLockPageAdapter(component: unknown): void {
+    const payload: AuthUiRegistryInput = {
+        id: CLERK_PROVIDER_ID,
+        component,
+    };
+    const globalState = globalThis as AuthUiRegistryGlobalState;
+    if (!Array.isArray(globalState.__or3LockPageAdapterQueue__)) {
+        globalState.__or3LockPageAdapterQueue__ = [];
+    }
+    globalState.__or3LockPageAdapterQueue__.push(payload);
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+            new CustomEvent<AuthUiRegistryInput>('or3:lock-page-adapter-register', {
+                detail: payload,
+            })
+        );
+    }
+}
+
 export default defineNuxtPlugin(async () => {
     if (import.meta.server) return;
 
@@ -68,5 +102,17 @@ export default defineNuxtPlugin(async () => {
 
     if (!tryRegisterAuthUiAdapter(componentModule.default)) {
         enqueueAuthUiAdapter(componentModule.default);
+    }
+
+    const lockPageModule = (await import('../components/ClerkLockPage.client.vue')) as {
+        default?: unknown;
+    };
+
+    if (!lockPageModule.default) {
+        return;
+    }
+
+    if (!tryRegisterLockPageAdapter(lockPageModule.default)) {
+        enqueueLockPageAdapter(lockPageModule.default);
     }
 });
