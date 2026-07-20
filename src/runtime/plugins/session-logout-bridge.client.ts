@@ -1,31 +1,7 @@
 import { logoutCleanup } from '~/utils/logout-cleanup';
 import { useSessionContext } from '~/composables/auth/useSessionContext';
-
-type ClerkClient = {
-    loaded?: boolean;
-    session?: unknown;
-    addListener?: (callback: () => void) => () => void;
-};
-
-function shouldRunLogoutCleanup(
-    authenticated: boolean | undefined,
-    clerk: ClerkClient | null
-): boolean {
-    if (authenticated) return false;
-    if (!clerk) return true;
-    if (!clerk.loaded) return false;
-    return !clerk.session;
-}
-
-async function waitForClerk(maxWaitMs = 5000): Promise<ClerkClient | null> {
-    const start = Date.now();
-    while (Date.now() - start < maxWaitMs) {
-        const clerk = (window as unknown as { Clerk?: ClerkClient }).Clerk;
-        if (clerk?.loaded) return clerk;
-        await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    return null;
-}
+import { confirmClientSignedOut } from '~/composables/auth/confirmClientSignedOut';
+import { waitForClerk } from '../lib/wait-for-clerk.client';
 
 export default defineNuxtPlugin(async () => {
     if (import.meta.server) return;
@@ -39,9 +15,22 @@ export default defineNuxtPlugin(async () => {
 
     const unsubscribe = clerk.addListener(async () => {
         await refresh();
-        if (shouldRunLogoutCleanup(data.value?.session?.authenticated, clerk)) {
-            await logoutCleanup(nuxtApp as unknown as Parameters<typeof logoutCleanup>[0]);
+
+        // Fast path: Clerk still has a client session — never tear down.
+        if (clerk.session) {
+            return;
         }
+
+        // Require sustained signed-out confirmation to ignore HMR flickers.
+        if (!(await confirmClientSignedOut())) {
+            return;
+        }
+
+        if (data.value?.session?.authenticated) {
+            return;
+        }
+
+        await logoutCleanup(nuxtApp as unknown as Parameters<typeof logoutCleanup>[0]);
     });
 
     if (import.meta.hot) {

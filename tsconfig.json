@@ -16,6 +16,8 @@
             "~~/*": ["../or3-chat/*"],
             "~~": ["../or3-chat"],
             "~/composables/auth/useSessionContext": ["./src/shims/use-session-context.d.ts"],
+            "~/composables/auth/confirmClientSignedOut": ["./src/shims/confirm-client-signed-out.d.ts"],
+            "~/composables/auth/useClientSessionRecovery": ["./src/shims/use-client-session-recovery.d.ts"],
             "~/*": ["../or3-chat/app/*"],
             "~": ["../or3-chat/app"],
             "~/types/*": ["../or3-chat/types/*"],
@@ -24,5 +26,5 @@
         }
     },
     "include": ["src/**/*.ts"],
-    "exclude": ["node_modules", "dist"]
+    "exclude": ["node_modules", "dist", "src/**/__tests__/**"]
 }
