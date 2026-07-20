@@ -14,26 +14,6 @@ declare module '~/utils/logout-cleanup' {
     export function logoutCleanup(nuxtApp?: unknown): Promise<void>;
 }
 
-declare module '~/composables/auth/useSessionContext' {
-    import type { Ref, ComputedRef } from 'vue';
-
-    interface SessionInfo {
-        authenticated?: boolean;
-        [key: string]: unknown;
-    }
-
-    interface SessionPayload {
-        session: SessionInfo | null;
-    }
-
-    export function useSessionContext(): {
-        data: ComputedRef<SessionPayload | null>;
-        pending: Ref<boolean>;
-        error: Ref<Error | null>;
-        refresh: () => Promise<void>;
-    };
-}
-
 declare module '#app' {
     import type { Component } from 'vue';
 
@@ -45,19 +25,6 @@ declare module '#app' {
         $registerLockPageAdapter?: (input: {
             id: string;
             component: Component;
-        }) => void;
-    }
-}
-
-declare module 'vue' {
-    interface ComponentCustomProperties {
-        $registerAuthUiAdapter?: (input: {
-            id: string;
-            component: unknown;
-        }) => void;
-        $registerLockPageAdapter?: (input: {
-            id: string;
-            component: unknown;
         }) => void;
     }
 }

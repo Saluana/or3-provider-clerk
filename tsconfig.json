@@ -15,6 +15,7 @@
             "h3": ["../or3-chat/node_modules/h3"],
             "~~/*": ["../or3-chat/*"],
             "~~": ["../or3-chat"],
+            "~/composables/auth/useSessionContext": ["./src/shims/use-session-context.d.ts"],
             "~/*": ["../or3-chat/app/*"],
             "~": ["../or3-chat/app"],
             "~/types/*": ["../or3-chat/types/*"],

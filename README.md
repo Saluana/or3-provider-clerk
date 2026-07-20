@@ -44,6 +44,9 @@ The provider registers itself via the OR3 hook/registry system at startup:
 - **Admin auth adapter**: validates Clerk-issued tokens for admin endpoints
 - **Middleware**: `00.clerk` — runs Clerk's `clerkMiddleware()` on every request
 
+Session provisioning requires a primary email whose Clerk verification status
+is `verified`; absent or unverified primary addresses are rejected.
+
 ## Runtime entrypoints
 
 | File | Purpose |

@@ -84,7 +84,10 @@ export const clerkAuthProvider: AuthProvider = {
         );
 
         // Require valid primary email
-        if (!primaryEmail?.emailAddress) {
+        if (
+            !primaryEmail?.emailAddress ||
+            primaryEmail.verification?.status !== 'verified'
+        ) {
             throw new Error('User has no verified primary email address');
         }
 
