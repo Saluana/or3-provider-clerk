@@ -1,6 +1,6 @@
 {
     "name": "or3-provider-clerk",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Clerk authentication provider for OR3 Chat — SSR-safe auth middleware, token brokering, and session management.",
     "license": "MIT",
     "type": "module",
