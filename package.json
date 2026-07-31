@@ -1,6 +1,6 @@
 {
     "name": "or3-provider-clerk",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/Saluana/or3-provider-clerk.git"
@@ -8,6 +8,10 @@
     "description": "Clerk authentication provider for OR3 Chat — SSR-safe auth middleware, token brokering, and session management.",
     "license": "MIT",
     "type": "module",
+    "engines": {
+        "node": ">=24"
+    },
+    "packageManager": "bun@1.3.14",
     "sideEffects": false,
     "exports": {
         ".": {
@@ -50,7 +54,7 @@
     },
     "devDependencies": {
         "@nuxt/module-builder": "^1.0.2",
-        "@types/node": "^25.2.1",
+        "@types/node": "^24.10.1",
         "h3": "^1.15.4",
         "jsdom": "^28.0.0",
         "pathe": "^2.0.0",

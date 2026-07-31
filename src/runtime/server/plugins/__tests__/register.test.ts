@@ -5,6 +5,10 @@ const registerProviderTokenBrokerMock = vi.hoisted(() => vi.fn());
 const registerProviderAdminAdapterMock = vi.hoisted(() => vi.fn());
 const useRuntimeConfigMock = vi.hoisted(() => vi.fn());
 
+vi.mock('nitropack/runtime/plugin', () => ({
+    defineNitroPlugin: (plugin: () => unknown) => plugin(),
+}));
+
 vi.mock('~~/server/auth/registry', () => ({
     registerAuthProvider: registerAuthProviderMock as unknown,
 }));
@@ -42,9 +46,6 @@ describe('clerk register plugin', () => {
         useRuntimeConfigMock.mockReset();
         process.env.NODE_ENV = 'test';
 
-        (globalThis as typeof globalThis & { defineNitroPlugin?: unknown }).defineNitroPlugin = (
-            plugin: () => unknown
-        ) => plugin();
         useRuntimeConfigMock.mockReturnValue({
             auth: { enabled: true, provider: 'clerk' },
             clerkSecretKey: 'sk_live_valid',

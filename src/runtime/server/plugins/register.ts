@@ -1,3 +1,4 @@
+import { defineNitroPlugin } from 'nitropack/runtime/plugin';
 import { CLERK_PROVIDER_ID } from '~~/shared/cloud/provider-ids';
 import { registerAuthProvider } from '~~/server/auth/registry';
 import { registerProviderTokenBroker } from '~~/server/auth/token-broker/registry';
