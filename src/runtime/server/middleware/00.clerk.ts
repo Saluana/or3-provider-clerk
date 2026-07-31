@@ -23,6 +23,7 @@
  */
 
 import { useRuntimeConfig } from '#imports';
+import { defineEventHandler } from 'h3';
 import { CLERK_PROVIDER_ID } from '~~/shared/cloud/provider-ids';
 
 export default defineEventHandler(async (event) => {

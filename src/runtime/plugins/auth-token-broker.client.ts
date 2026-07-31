@@ -1,3 +1,4 @@
+import { defineNuxtPlugin, useRuntimeConfig } from '#imports';
 import { registerAuthTokenBroker } from '~/composables/auth/useAuthTokenBroker.client';
 import {
     registerClientAuthStatusResolver,

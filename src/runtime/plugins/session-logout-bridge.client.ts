@@ -1,3 +1,4 @@
+import { defineNuxtPlugin, useNuxtApp, useRuntimeConfig } from '#imports';
 import { logoutCleanup } from '~/utils/logout-cleanup';
 import { useSessionContext } from '~/composables/auth/useSessionContext';
 import { confirmClientSignedOut } from '~/composables/auth/confirmClientSignedOut';
