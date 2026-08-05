@@ -2,7 +2,10 @@ import type { ComputedRef, Ref } from 'vue';
 
 interface SessionInfo {
     authenticated?: boolean;
-    [key: string]: unknown;
+    user?: { id?: string };
+    workspace?: { id?: string };
+    role?: 'owner' | 'editor' | 'viewer';
+    entitlements?: string[];
 }
 
 interface SessionPayload {
@@ -15,3 +18,5 @@ export declare function useSessionContext(): {
     error: Ref<Error | null>;
     refresh: () => Promise<void>;
 };
+
+export declare function getCachedSessionContext(): SessionInfo | null;
