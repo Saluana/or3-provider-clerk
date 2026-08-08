@@ -39,6 +39,7 @@
         "prepack": "bun run build",
         "build": "nuxt-module-build build",
         "type-check": "tsc --noEmit",
+        "type-check:standalone": "tsc -p tsconfig.release.json --noEmit",
         "test": "vitest run"
     },
     "publishConfig": {
