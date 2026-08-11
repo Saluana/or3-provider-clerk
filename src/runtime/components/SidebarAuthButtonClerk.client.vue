@@ -1,6 +1,30 @@
 <template>
     <SignedIn>
+        <button
+            v-if="isMoreSheetLayout"
+            type="button"
+            class="more-row"
+            aria-label="Account menu"
+            @click="openAccount"
+        >
+            <span
+                class="more-row-icon more-row-icon--admin"
+                aria-hidden="true"
+            >
+                <UIcon name="lucide:user" />
+            </span>
+            <span class="more-row-copy">
+                <span class="more-row-label">Account</span>
+                <span class="more-row-desc">Manage your profile & settings</span>
+            </span>
+            <UIcon
+                name="lucide:chevron-right"
+                class="more-row-chevron"
+                aria-hidden="true"
+            />
+        </button>
         <div
+            v-else
             class="h-[54px] w-[54px] flex items-center justify-center cursor-pointer rounded-[var(--md-border-radius)] hover:bg-[var(--md-surface-hover)]! transition-colors"
         >
             <UserButton
@@ -16,7 +40,30 @@
 
     <SignedOut>
         <SignInButton mode="modal">
+            <button
+                v-if="isMoreSheetLayout"
+                type="button"
+                class="more-row"
+                aria-label="Sign In"
+            >
+                <span
+                    class="more-row-icon more-row-icon--admin"
+                    aria-hidden="true"
+                >
+                    <UIcon name="lucide:log-in" />
+                </span>
+                <span class="more-row-copy">
+                    <span class="more-row-label">Login</span>
+                    <span class="more-row-desc">Manage your account</span>
+                </span>
+                <UIcon
+                    name="lucide:chevron-right"
+                    class="more-row-chevron"
+                    aria-hidden="true"
+                />
+            </button>
             <UButton
+                v-else
                 type="button"
                 block
                 variant="ghost"
@@ -44,5 +91,29 @@ import {
     SignedIn,
     SignedOut,
     UserButton,
+    useClerk,
 } from '@clerk/vue';
+import { computed, inject, unref } from 'vue';
+
+type AuthUiLayout = 'rail' | 'more-sheet';
+
+const props = defineProps<{
+    layout?: AuthUiLayout;
+}>();
+
+const injectedLayout = inject<AuthUiLayout | null>(
+    'or3:auth-ui-layout',
+    null
+);
+const isMoreSheetLayout = computed(
+    () =>
+        props.layout === 'more-sheet' ||
+        (injectedLayout ? unref(injectedLayout) : 'rail') === 'more-sheet'
+);
+
+const clerk = useClerk();
+
+function openAccount(): void {
+    clerk.value?.openUserProfile();
+}
 </script>
