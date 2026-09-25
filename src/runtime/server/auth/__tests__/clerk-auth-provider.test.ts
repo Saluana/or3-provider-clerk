@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import type { H3Event } from 'h3';
-import { clerkAuthProvider } from '../../auth/clerk-auth-provider';
+import { clerkAuthProvider, invalidateClerkProfile } from '../../auth/clerk-auth-provider';
 import {
     verifyAuthorizationContract,
     type AuthorizationCaseId,
@@ -21,7 +21,16 @@ vi.mock('@clerk/nuxt/server', () => ({
     clerkMiddleware: clerkMiddlewareMock,
 }));
 
+vi.mock('#imports', () => ({
+    useRuntimeConfig: () => ({ security: { allowedOrigins: ['https://chat.example.com'] } }),
+}));
+
 describe('clerkAuthProvider', () => {
+    beforeEach(() => {
+        invalidateClerkProfile();
+        getUserMock.mockReset();
+        clerkMiddlewareMock.mockReset();
+    });
     it('executes the shared unauthenticated and verified-email contract', async () => {
         const supported = new Set<AuthorizationCaseId>([
             'unauthenticated', 'subject-match', 'unverified-email',
@@ -30,6 +39,7 @@ describe('clerkAuthProvider', () => {
             name: 'clerk',
             supports: supported,
             async evaluate(id) {
+                invalidateClerkProfile();
                 const authenticated = id !== 'unauthenticated';
                 getUserMock.mockResolvedValue({
                     primaryEmailAddressId: 'email-1',
@@ -69,6 +79,9 @@ describe('clerkAuthProvider', () => {
 
         await expect(clerkAuthProvider.getSession(event)).resolves.toBeNull();
         expect(clerkMiddlewareMock).toHaveBeenCalledTimes(1);
+        expect(clerkMiddlewareMock).toHaveBeenCalledWith({
+            authorizedParties: ['https://chat.example.com'],
+        });
     });
 
     it('returns null when auth remains missing after bootstrap', async () => {
@@ -95,15 +108,15 @@ describe('clerkAuthProvider', () => {
         });
         const event = {
             context: {
-                auth: () => ({
+                auth: vi.fn(() => ({
                     userId: 'clerk-user-1',
                     sessionClaims: { exp: Math.floor(Date.now() / 1000) + 60 },
-                }),
+                })),
             },
         } as unknown as H3Event;
 
         await expect(clerkAuthProvider.getSession(event)).rejects.toThrow(
-            'User has no verified primary email address'
+            'Verified primary email required'
         );
     });
 
@@ -124,7 +137,7 @@ describe('clerkAuthProvider', () => {
         } as unknown as H3Event;
 
         await expect(clerkAuthProvider.getSession(event)).rejects.toThrow(
-            'User has no verified primary email address'
+            'Verified primary email required'
         );
     });
 
@@ -143,10 +156,10 @@ describe('clerkAuthProvider', () => {
         });
         const event = {
             context: {
-                auth: () => ({
+                auth: vi.fn(() => ({
                     userId: 'clerk-user-1',
                     sessionClaims: { exp: Math.floor(Date.now() / 1000) + 60 },
-                }),
+                })),
             },
         } as unknown as H3Event;
 
@@ -157,5 +170,29 @@ describe('clerkAuthProvider', () => {
                 email: 'person@example.com',
             },
         });
+        expect(event.context.auth).toHaveBeenCalledWith({ acceptsToken: 'session_token' });
+    });
+
+    it('reuses a short-lived verified profile while checking each session token', async () => {
+        getUserMock.mockResolvedValue({
+            primaryEmailAddressId: 'email-1',
+            emailAddresses: [{ id: 'email-1', emailAddress: 'person@example.com', verification: { status: 'verified' } }],
+            firstName: 'Person', username: null,
+        });
+        const firstAuth = vi.fn(() => ({ userId: 'clerk-user-1', sessionClaims: { exp: Math.floor(Date.now() / 1000) + 60 } }));
+        const secondAuth = vi.fn(() => ({ userId: 'clerk-user-1', sessionClaims: { exp: Math.floor(Date.now() / 1000) + 60 } }));
+        await clerkAuthProvider.getSession({ context: { auth: firstAuth } } as unknown as H3Event);
+        await clerkAuthProvider.getSession({ context: { auth: secondAuth } } as unknown as H3Event);
+        expect(getUserMock).toHaveBeenCalledTimes(1);
+        expect(firstAuth).toHaveBeenCalledTimes(1);
+        expect(secondAuth).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns null for deleted users and propagates identity service failures', async () => {
+        const event = { context: { auth: () => ({ userId: 'clerk-user-1', sessionClaims: { exp: Math.floor(Date.now() / 1000) + 60 } }) } } as unknown as H3Event;
+        getUserMock.mockRejectedValueOnce({ status: 404 });
+        await expect(clerkAuthProvider.getSession(event)).resolves.toBeNull();
+        getUserMock.mockRejectedValueOnce({ status: 503 });
+        await expect(clerkAuthProvider.getSession(event)).rejects.toMatchObject({ status: 503 });
     });
 });

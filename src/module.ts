@@ -5,7 +5,9 @@ export default defineNuxtModule({
     async setup() {
         const { resolve } = createResolver(import.meta.url);
 
-        await installModule('@clerk/nuxt');
+        // Our middleware supplies deployment-bound authorizedParties. The
+        // package default would otherwise install a second unbound verifier.
+        await installModule('@clerk/nuxt', { skipServerMiddleware: true });
 
         addServerHandler({
             route: '',

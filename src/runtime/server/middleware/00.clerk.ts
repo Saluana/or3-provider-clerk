@@ -25,6 +25,7 @@
 import { useRuntimeConfig } from '#imports';
 import { defineEventHandler } from 'h3';
 import { CLERK_PROVIDER_ID } from '~~/shared/cloud/provider-ids';
+import { getClerkAuthorizedParties } from '../auth/authorized-parties';
 
 export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig();
@@ -38,6 +39,8 @@ export default defineEventHandler(async (event) => {
 
     // Dynamic import to avoid loading Clerk when disabled
     const { clerkMiddleware } = await import('@clerk/nuxt/server');
-    const middleware = clerkMiddleware();
+    const middleware = clerkMiddleware({
+        authorizedParties: getClerkAuthorizedParties(event),
+    });
     return middleware(event);
 });

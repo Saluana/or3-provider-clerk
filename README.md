@@ -5,6 +5,7 @@ Clerk authentication provider for [OR3 Chat](https://github.com/or3-chat/or3-cha
 ## What It Provides
 
 - **SSR auth middleware** (`00.clerk`) — runs Clerk's `clerkMiddleware()` so `event.context.auth` is available to downstream SSR endpoints
+- Clerk session tokens are restricted to the exact origins in `OR3_ALLOWED_ORIGINS` and `OR3_PUBLIC_DOMAIN`; configure at least one for production. Verified primary-email profile enrichment is cached for at most 30 seconds while every request still authenticates its token.
 - **`AuthProvider`** (`clerk`) — resolves OR3 sessions from the Clerk SSR context and validates the session JWT
 - **Server `ProviderTokenBroker`** (`clerk`) — mints Clerk JWT template tokens (e.g. the Convex template) for SSR endpoints
 - **Client auth token broker** — exposes Clerk session tokens through `useAuthTokenBroker()` for direct-mode sync providers
