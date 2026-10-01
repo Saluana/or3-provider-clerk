@@ -15,6 +15,7 @@ declare module '~/utils/logout-cleanup' {
 }
 
 declare module '#app' {
+    export { useNuxtApp } from 'nuxt/app';
     import type { Component } from 'vue';
 
     interface NuxtApp {
