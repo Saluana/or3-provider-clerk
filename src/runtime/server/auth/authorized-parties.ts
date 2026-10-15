@@ -15,7 +15,7 @@ function canonicalOrigin(value: string): string | null {
 }
 
 /** Trusted deployment configuration, never the untrusted request Host/Origin. */
-export function getClerkAuthorizedParties(event: H3Event): string[] {
+export function getClerkAuthorizedParties(event?: H3Event): string[] {
     const config = useRuntimeConfig(event) as {
         security?: { allowedOrigins?: string[] };
     };

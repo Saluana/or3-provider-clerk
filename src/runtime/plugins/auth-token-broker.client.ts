@@ -11,17 +11,20 @@ export default defineNuxtPlugin(() => {
     if (import.meta.server) return;
     const runtimeConfig = useRuntimeConfig();
     if (!runtimeConfig.public.ssrAuthEnabled) return;
+    if (runtimeConfig.public.authProvider && runtimeConfig.public.authProvider !== 'clerk') return;
 
     registerAuthTokenBroker(() => ({
         async getProviderToken(input) {
             const clerk = await waitForClerk();
-            if (!clerk?.session?.getToken) {
+            const session = clerk?.session;
+            if (!session?.getToken) {
                 return null;
             }
 
             return await getClerkTokenOnce(
-                (options) => clerk.session!.getToken!(options),
-                input.template
+                (options) => session.getToken!(options),
+                input.template,
+                session
             );
         },
     }));
@@ -29,11 +32,12 @@ export default defineNuxtPlugin(() => {
     registerClientSessionRecovery(async () => {
         const clerk = await waitForClerk(5000);
         if (!clerk?.loaded) return false;
-        if (!clerk.session?.getToken) return false;
+        const session = clerk.session;
+        if (!session?.getToken) return false;
 
         // Touch the session token so Clerk can refresh cookies if needed.
-        await getClerkTokenOnce((options) => clerk.session!.getToken!(options));
-        return true;
+        const token = await getClerkTokenOnce((options) => session.getToken!(options), undefined, session);
+        return Boolean(token?.trim());
     });
 
     registerClientAuthStatusResolver(async () => {

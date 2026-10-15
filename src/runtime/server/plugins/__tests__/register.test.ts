@@ -48,6 +48,7 @@ describe('clerk register plugin', () => {
 
         useRuntimeConfigMock.mockReturnValue({
             auth: { enabled: true, provider: 'clerk' },
+            security: { allowedOrigins: ['https://chat.example.com'] },
             clerkSecretKey: 'sk_live_valid',
             public: { clerkPublishableKey: 'pk_live_valid' },
         });
@@ -84,5 +85,21 @@ describe('clerk register plugin', () => {
             'Refusing to start with Clerk test publishable key in production.'
         );
         expect(registerAuthProviderMock).not.toHaveBeenCalled();
+    });
+
+    it('fails startup before accepting requests when trusted origins are missing', async () => {
+        vi.stubEnv('OR3_PUBLIC_DOMAIN', '');
+        useRuntimeConfigMock.mockReturnValue({
+            auth: { enabled: true, provider: 'clerk' },
+            security: { allowedOrigins: [] },
+            clerkSecretKey: 'sk_live_valid',
+            public: { clerkPublishableKey: 'pk_live_valid' },
+        });
+        try {
+            await expect(import('../register')).rejects.toThrow('Clerk authorized origins are not configured');
+            expect(registerAuthProviderMock).not.toHaveBeenCalled();
+        } finally {
+            vi.unstubAllEnvs();
+        }
     });
 });

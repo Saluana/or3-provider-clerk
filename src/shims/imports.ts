@@ -12,5 +12,3 @@ export {
     useFetch,
     useState,
 } from 'nuxt/app';
-
-export { useToast } from '../../../or3-chat/node_modules/@nuxt/ui/dist/runtime/composables/useToast';

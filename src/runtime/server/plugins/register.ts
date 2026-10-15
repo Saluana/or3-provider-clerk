@@ -7,6 +7,7 @@ import { clerkAuthProvider } from '../auth/clerk-auth-provider';
 import { createClerkTokenBroker } from '../token-broker/clerk-token-broker';
 import { clerkAdminAdapter } from '../admin/adapters/auth-clerk';
 import { useRuntimeConfig } from '#imports';
+import { getClerkAuthorizedParties } from '../auth/authorized-parties';
 
 type RuntimeConfigWithClerk = ReturnType<typeof useRuntimeConfig> & {
     clerkSecretKey?: string;
@@ -50,6 +51,7 @@ export default defineNitroPlugin(() => {
             `[or3-provider-clerk] ${errors.join(' ')} Install/configure Clerk provider env values and restart.`
         );
     }
+    getClerkAuthorizedParties();
 
     registerAuthProvider({
         id: CLERK_PROVIDER_ID,
