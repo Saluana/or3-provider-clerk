@@ -1,5 +1,9 @@
 # or3-provider-clerk
 
+The auth UI adapter exposes `openSignIn()` through Clerk's client API. Updated
+hosts use it to open Clerk's existing sign-in modal directly from chat cards and
+blocked sends, including when mobile navigation is closed.
+
 Clerk authentication provider for [OR3 Chat](https://github.com/or3-chat/or3-chat) — SSR-safe auth middleware, token brokering, and session management via Clerk.
 
 ## What It Provides
