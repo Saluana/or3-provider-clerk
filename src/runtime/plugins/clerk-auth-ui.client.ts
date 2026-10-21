@@ -1,8 +1,10 @@
 import { defineNuxtPlugin, useNuxtApp, useRuntimeConfig } from '#imports';
+import { useClerk } from '@clerk/vue';
 
 type AuthUiRegistryInput = {
     id: string;
     component: unknown;
+    openSignIn?: () => void;
 };
 
 type AuthUiRegistryBridge = {
@@ -17,7 +19,7 @@ type AuthUiRegistryGlobalState = typeof globalThis & {
 
 const CLERK_PROVIDER_ID = 'clerk';
 
-function tryRegisterAuthUiAdapter(component: unknown): boolean {
+function tryRegisterAuthUiAdapter(component: unknown, openSignIn: () => void): boolean {
     const nuxtApp = useNuxtApp() as AuthUiRegistryBridge;
     if (typeof nuxtApp.$registerAuthUiAdapter !== 'function') {
         return false;
@@ -26,14 +28,16 @@ function tryRegisterAuthUiAdapter(component: unknown): boolean {
     nuxtApp.$registerAuthUiAdapter({
         id: CLERK_PROVIDER_ID,
         component,
+        openSignIn,
     });
     return true;
 }
 
-function enqueueAuthUiAdapter(component: unknown): void {
+function enqueueAuthUiAdapter(component: unknown, openSignIn: () => void): void {
     const payload: AuthUiRegistryInput = {
         id: CLERK_PROVIDER_ID,
         component,
+        openSignIn,
     };
     const globalState = globalThis as AuthUiRegistryGlobalState;
     if (!Array.isArray(globalState.__or3AuthUiAdapterQueue__)) {
@@ -92,6 +96,7 @@ export default defineNuxtPlugin(async () => {
         return;
     }
 
+    const clerk = useClerk();
     const componentModule = (await import('../components/SidebarAuthButtonClerk.client.vue')) as {
         default?: unknown;
     };
@@ -100,8 +105,9 @@ export default defineNuxtPlugin(async () => {
         return;
     }
 
-    if (!tryRegisterAuthUiAdapter(componentModule.default)) {
-        enqueueAuthUiAdapter(componentModule.default);
+    const openSignIn = () => { clerk.value?.openSignIn(); };
+    if (!tryRegisterAuthUiAdapter(componentModule.default, openSignIn)) {
+        enqueueAuthUiAdapter(componentModule.default, openSignIn);
     }
 
     const lockPageModule = (await import('../components/ClerkLockPage.client.vue')) as {
