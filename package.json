@@ -1,6 +1,6 @@
 {
     "name": "or3-provider-clerk",
-    "version": "0.0.9",
+    "version": "0.0.10",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/Saluana/or3-provider-clerk.git"
@@ -9,7 +9,7 @@
     "license": "MIT",
     "type": "module",
     "engines": {
-        "node": ">=24"
+        "node": "^24.22.1"
     },
     "packageManager": "bun@1.3.14",
     "sideEffects": false,
