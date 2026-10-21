@@ -1,5 +1,9 @@
 # or3-provider-clerk
 
+The auth UI adapter exposes `openSignIn()` through Clerk's client API. Updated
+hosts use it to open Clerk's existing sign-in modal directly from chat cards and
+blocked sends, including when mobile navigation is closed.
+
 Clerk authentication provider for [OR3 Chat](https://github.com/or3-chat/or3-chat) — SSR-safe auth middleware, token brokering, and session management via Clerk.
 
 ## What It Provides
@@ -45,6 +49,8 @@ export const or3ProviderModules = [
 | `AUTH_PROVIDER` | Yes | `clerk` | Must be `clerk` (alias `OR3_AUTH_PROVIDER` is also accepted by the host) |
 | `NUXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | **Yes** | — | Clerk publishable key, client-side (maps to `runtimeConfig.public.clerkPublishableKey`) |
 | `NUXT_CLERK_SECRET_KEY` | **Yes** | — | Clerk secret key, server-side only (maps to `runtimeConfig.clerkSecretKey`) |
+| `OR3_ALLOWED_ORIGINS` | One origin source | — | Comma-separated exact origins permitted to issue Clerk session tokens, such as `https://chat.example.com`; local development can use `http://localhost:3000` |
+| `OR3_PUBLIC_DOMAIN` | One origin source | — | Public deployment hostname or exact HTTPS origin, added to the allowed Clerk origins; localhost hostnames must instead be configured in `OR3_ALLOWED_ORIGINS` |
 
 Get keys from the Clerk dashboard (API Keys page).
 
@@ -54,6 +60,7 @@ When SSR auth is enabled and `AUTH_PROVIDER=clerk`, the register plugin validate
 
 - **Missing keys fail startup** — a missing publishable or secret key throws and prevents the server from starting.
 - **Test keys are rejected in production** — in `NODE_ENV=production`, keys starting with `pk_test_` or `sk_test_` are refused. Use live (`pk_live_`/`sk_live_`) keys for production instances.
+- **Trusted origins are required at startup** — configure at least one exact origin with `OR3_ALLOWED_ORIGINS` or `OR3_PUBLIC_DOMAIN`. Request headers never supply this trust configuration.
 
 The provider is otherwise inert: middleware, server plugin, and client plugins all no-op when SSR auth is disabled or the active provider is not `clerk`, so static builds are unaffected.
 
@@ -74,9 +81,23 @@ the Clerk user profile directly.
 
 Session provisioning requires a primary email whose Clerk verification status is `verified`; absent or unverified primary addresses cause the session to be rejected.
 
+OR3 registration policy (`open`, `invite_only`, or `disabled`), bootstrap-owner
+provisioning, signup/workspace invites, workspace membership, administrator access,
+and settings are enforced by the host and selected sync provider. Clerk manages
+credentials and its signup UI; creating a Clerk identity does not bypass OR3's
+registration policy. Invite links must be opened on the OR3 deployment so the
+host can retain their token through sign-in, and the verified primary email must
+match the invite address.
+
 ## Token brokering
 
 Clerk issues provider-specific JWTs via **JWT templates** configured in the Clerk dashboard. The token broker passes the request's `template` through to `session.getToken({ template })`, so each direct-mode sync provider (e.g. Convex direct mode) gets a token for its own template without core code depending on the Clerk SDK. If no template is requested, Clerk's default session token is used. Empty or failed token minting is logged and returns `null` rather than throwing.
+
+Client token requests share an in-flight mint only within the same Clerk session
+and template. Switching accounts cannot reuse another session's pending token.
+Session recovery succeeds only after a non-empty token is obtained. Client token,
+status, recovery, and logout adapters activate only when Clerk is selected and SSR
+auth is enabled.
 
 ## Runtime entrypoints
 
@@ -118,6 +139,9 @@ bun run type-check          # TypeScript check
 bun run type-check:standalone  # Standalone tsconfig typecheck
 bun run build               # Build nuxt module
 ```
+
+Both TypeScript checks use explicit host contracts and installed dependencies;
+they do not require a sibling OR3 Chat checkout or generated host Nuxt types.
 
 
 ### Testing local changes in OR3 Chat

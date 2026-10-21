@@ -57,4 +57,16 @@ describe('getClerkTokenOnce', () => {
         await expect(getClerkTokenOnce(getToken, 'convex-sync')).resolves.toBe('second');
         expect(getToken).toHaveBeenCalledTimes(2);
     });
+
+    it('never shares a pending token across sessions after an account switch', async () => {
+        let resolveFirst!: (token: string) => void;
+        const oldSession = { getToken: vi.fn(() => new Promise<string>((resolve) => { resolveFirst = resolve; })) };
+        const newSession = { getToken: vi.fn(async () => 'new-user-token') };
+        const first = getClerkTokenOnce(() => oldSession.getToken(), 'convex-sync', oldSession);
+        const second = getClerkTokenOnce(() => newSession.getToken(), 'convex-sync', newSession);
+
+        resolveFirst('old-user-token');
+        await expect(first).resolves.toBe('old-user-token');
+        await expect(second).resolves.toBe('new-user-token');
+    });
 });

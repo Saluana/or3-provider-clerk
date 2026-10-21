@@ -8,6 +8,7 @@ export default defineNuxtPlugin(async () => {
     if (import.meta.server) return;
     const runtimeConfig = useRuntimeConfig();
     if (!runtimeConfig.public.ssrAuthEnabled) return;
+    if (runtimeConfig.public.authProvider && runtimeConfig.public.authProvider !== 'clerk') return;
 
     const { refresh, data } = useSessionContext();
     const nuxtApp = useNuxtApp();

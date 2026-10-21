@@ -6,7 +6,7 @@
 const GLOBAL_KEY = '__or3_clerk_get_token_flight__';
 
 type TokenFlightRegistry = {
-  inflight: Map<string, Promise<string | null>>;
+  inflight: WeakMap<object, Map<string | undefined, Promise<string | null>>>;
 };
 
 function getRegistry(): TokenFlightRegistry {
@@ -14,22 +14,23 @@ function getRegistry(): TokenFlightRegistry {
     [GLOBAL_KEY]?: TokenFlightRegistry;
   };
   if (!globalAny[GLOBAL_KEY]) {
-    globalAny[GLOBAL_KEY] = { inflight: new Map() };
+    globalAny[GLOBAL_KEY] = { inflight: new WeakMap() };
   }
   return globalAny[GLOBAL_KEY]!;
 }
 
-function flightKey(template: string | undefined): string {
-  return template ?? '__default__';
-}
-
 export async function getClerkTokenOnce(
   getToken: (options?: { template?: string }) => Promise<string | null>,
-  template?: string
+  template?: string,
+  session: object = getToken
 ): Promise<string | null> {
   const registry = getRegistry();
-  const key = flightKey(template);
-  const existing = registry.inflight.get(key);
+  let inflight = registry.inflight.get(session);
+  if (!inflight) {
+    inflight = new Map();
+    registry.inflight.set(session, inflight);
+  }
+  const existing = inflight.get(template);
   if (existing) {
     return existing;
   }
@@ -41,14 +42,14 @@ export async function getClerkTokenOnce(
       return null;
     }
   })().finally(() => {
-    registry.inflight.delete(key);
+    inflight.delete(template);
   });
 
-  registry.inflight.set(key, promise);
+  inflight.set(template, promise);
   return promise;
 }
 
 /** Test helper — clears in-flight token fetches. */
 export function resetClerkTokenFlightForTests(): void {
-  getRegistry().inflight.clear();
+  getRegistry().inflight = new WeakMap();
 }

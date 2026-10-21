@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerClientSessionRecovery } from '~/composables/auth/useClientSessionRecovery';
 import { recoverClientSession } from '~/composables/auth/useClientSessionRecovery';
+import { registerAuthTokenBroker } from '~/composables/auth/useAuthTokenBroker.client';
+import { registerClientAuthStatusResolver } from '~/composables/auth/useClientAuthStatus.client';
 
 const waitForClerk = vi.fn();
 const getClerkTokenOnce = vi.fn(async () => 'jwt');
@@ -26,12 +28,14 @@ describe('clerk auth-token-broker session recovery', () => {
         vi.resetModules();
         waitForClerk.mockReset();
         getClerkTokenOnce.mockReset().mockResolvedValue('jwt');
+        vi.mocked(registerAuthTokenBroker).mockClear();
+        vi.mocked(registerClientAuthStatusResolver).mockClear();
         registerClientSessionRecovery(async () => false);
         (globalThis as typeof globalThis & { defineNuxtPlugin?: unknown }).defineNuxtPlugin =
             (plugin: () => unknown) => plugin();
         (globalThis as typeof globalThis & { useRuntimeConfig?: unknown }).useRuntimeConfig =
             () => ({
-                public: { ssrAuthEnabled: true },
+                public: { ssrAuthEnabled: true, authProvider: 'clerk' },
             });
     });
 
@@ -63,5 +67,30 @@ describe('clerk auth-token-broker session recovery', () => {
 
         await expect(recoverClientSession()).resolves.toBe(false);
         expect(getClerkTokenOnce).not.toHaveBeenCalled();
+    });
+
+    it.each([null, '', '   '])('does not report recovery when token minting returns %j', async (token) => {
+        waitForClerk.mockResolvedValue({ loaded: true, session: { getToken: vi.fn() } });
+        getClerkTokenOnce.mockResolvedValue(token);
+        await import('../../plugins/auth-token-broker.client');
+
+        await expect(recoverClientSession()).resolves.toBe(false);
+    });
+
+    it.each([
+        { ssrAuthEnabled: true, authProvider: 'basic-auth' },
+        { ssrAuthEnabled: false, authProvider: 'clerk' },
+    ])('preserves the active provider registrations for %j', async (publicConfig) => {
+        (globalThis as typeof globalThis & { useRuntimeConfig?: unknown }).useRuntimeConfig =
+            () => ({ public: publicConfig });
+        const activeRecovery = vi.fn(async () => true);
+        registerClientSessionRecovery(activeRecovery);
+        await import('../../plugins/auth-token-broker.client');
+
+        await expect(recoverClientSession()).resolves.toBe(true);
+        expect(activeRecovery).toHaveBeenCalledOnce();
+        expect(registerAuthTokenBroker).not.toHaveBeenCalled();
+        expect(registerClientAuthStatusResolver).not.toHaveBeenCalled();
+        expect(waitForClerk).not.toHaveBeenCalled();
     });
 });

@@ -52,7 +52,7 @@ describe('session logout bridge', () => {
             (plugin: () => unknown) => plugin();
         (globalThis as typeof globalThis & { useRuntimeConfig?: unknown }).useRuntimeConfig =
             () => ({
-                public: { ssrAuthEnabled: true },
+                public: { ssrAuthEnabled: true, authProvider: 'clerk' },
             });
         (globalThis as typeof globalThis & { useNuxtApp?: unknown }).useNuxtApp = () => ({
             $syncEngine: { stop: vi.fn() },
@@ -88,5 +88,20 @@ describe('session logout bridge', () => {
         await clerkListener?.();
         expect(confirmClientSignedOut).toHaveBeenCalledTimes(1);
         expect(logoutCleanup).toHaveBeenCalledTimes(0);
+    });
+
+    it.each([
+        { ssrAuthEnabled: true, authProvider: 'basic-auth' },
+        { ssrAuthEnabled: false, authProvider: 'clerk' },
+    ])('does not subscribe to Clerk logout when inactive for %j', async (publicConfig) => {
+        (globalThis as typeof globalThis & { useRuntimeConfig?: unknown }).useRuntimeConfig =
+            () => ({ public: publicConfig });
+        clerkClient.session = null;
+        confirmClientSignedOut.mockResolvedValue(true);
+        await import('../../plugins/session-logout-bridge.client');
+
+        expect(clerkListener).toBeNull();
+        expect(refresh).not.toHaveBeenCalled();
+        expect(logoutCleanup).not.toHaveBeenCalled();
     });
 });
