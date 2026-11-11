@@ -12,6 +12,7 @@
  *   when SSR auth is disabled
  * - Runs before other middleware (file name prefix `00.`) so `event.context.auth`
  *   is available early
+ * - Keeps Clerk's handshake cookies storable (see `auth/handshake-cookies`)
  *
  * Constraints:
  * - SSR only. This file must not be imported into static builds.
@@ -26,6 +27,7 @@ import { useRuntimeConfig } from '#imports';
 import { defineEventHandler } from 'h3';
 import { CLERK_PROVIDER_ID } from '~~/shared/cloud/provider-ids';
 import { getClerkAuthorizedParties } from '../auth/authorized-parties';
+import { keepHandshakeCookies } from '../auth/handshake-cookies';
 
 export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig();
@@ -42,5 +44,6 @@ export default defineEventHandler(async (event) => {
     const middleware = clerkMiddleware({
         authorizedParties: getClerkAuthorizedParties(event),
     });
-    return middleware(event);
+    // The handshake redirect's cookies must survive on plain HTTP origins.
+    return keepHandshakeCookies(await middleware(event));
 });
