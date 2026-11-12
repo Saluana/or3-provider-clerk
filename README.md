@@ -21,6 +21,11 @@ Clerk authentication provider for [OR3 Chat](https://github.com/or3-chat/or3-cha
 
 This is an auth-only provider. Pair it with a sync provider (e.g. `or3-provider-convex`) and a storage provider (e.g. `or3-provider-fs`) for a complete stack.
 
+Version `0.0.12` fixes session-refresh handshakes on plain HTTP origins such as
+localhost. Handshake cookies marked `SameSite=None` without `Secure` are changed
+to `SameSite=Lax` so browsers retain the refreshed session. Cookies that already
+carry `Secure`, redirect headers, and the normal authentication checks are preserved.
+
 ## Install
 
 ```bash
