@@ -44,8 +44,8 @@ describe('session logout bridge', () => {
         logoutCleanup.mockClear();
         confirmClientSignedOut.mockReset().mockResolvedValue(false);
         refresh.mockClear();
-        sessionState.value.session = { authenticated: true };
-        clerkClient.session = { id: 'sess-1' };
+        sessionState.value.session = { authenticated: true, providerUserId: "user-1" };
+        clerkClient.session = { id: 'sess-1', user: { id: 'user-1' } };
         clerkListener = null;
         (globalThis as typeof globalThis & { Clerk?: unknown }).Clerk = clerkClient;
         (globalThis as typeof globalThis & { defineNuxtPlugin?: unknown }).defineNuxtPlugin =
@@ -70,15 +70,40 @@ describe('session logout bridge', () => {
         expect(logoutCleanup).toHaveBeenCalledTimes(1);
     });
 
-    it('does not clear workspace DBs when Clerk still has an active session', async () => {
-        clerkClient.session = { id: 'sess-1' };
-        confirmClientSignedOut.mockResolvedValue(true);
+    it('ignores SDK notifications for the same active provider session', async () => {
         await import('../../plugins/session-logout-bridge.client');
-        expect(typeof clerkListener).toBe('function');
         await clerkListener?.();
+        clerkClient.session = { id: 'sess-1', user: { id: 'user-1' } };
+        await Promise.all([clerkListener?.(), clerkListener?.(), clerkListener?.()]);
+        expect(refresh).not.toHaveBeenCalled();
+        expect(logoutCleanup).not.toHaveBeenCalled();
+    });
+
+    it('checks a switched provider session once without tearing down local data', async () => {
+        await import('../../plugins/session-logout-bridge.client');
+        await clerkListener?.();
+        clerkClient.session = { id: 'sess-2', user: { id: 'user-2' } };
+        await Promise.all([clerkListener?.(), clerkListener?.(), clerkListener?.()]);
         expect(refresh).toHaveBeenCalledTimes(1);
         expect(confirmClientSignedOut).not.toHaveBeenCalled();
-        expect(logoutCleanup).toHaveBeenCalledTimes(0);
+        expect(logoutCleanup).not.toHaveBeenCalled();
+    });
+
+    it('retries a rejected transition once without waiting for another Clerk event', async () => {
+        vi.useFakeTimers();
+        try {
+            await import('../../plugins/session-logout-bridge.client');
+            await clerkListener?.();
+            clerkClient.session = { id: 'sess-2', user: { id: 'user-2' } };
+            refresh.mockRejectedValueOnce(new Error('temporary transport failure'));
+            const changed = clerkListener?.();
+            await vi.advanceTimersByTimeAsync(3_000);
+            await changed;
+            expect(refresh).toHaveBeenCalledTimes(2);
+            expect(logoutCleanup).not.toHaveBeenCalled();
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('does not clear workspace DBs when sign-out is not confirmed', async () => {

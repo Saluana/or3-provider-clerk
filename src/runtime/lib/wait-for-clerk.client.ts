@@ -6,6 +6,8 @@
 export type ClerkClient = {
   loaded?: boolean;
   session?: {
+    id: string;
+    user?: { id: string };
     getToken?: (options?: { template?: string }) => Promise<string | null>;
   } | null;
   addListener?: (callback: () => void) => () => void;
